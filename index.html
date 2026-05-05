@@ -1,0 +1,1282 @@
+<html class="dark scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ARCHER by Arventra</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&amp;family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#65e0ff",
+                    "primary-container": "#00c6e8",
+                    "on-primary-container": "#004e5d",
+                    "secondary": "#7dd0ff",
+                    "background": "#0e1416",
+                    "surface": "#0e1416",
+                    "surface-variant": "#2f3638",
+                    "on-surface": "#dde3e6",
+                    "on-surface-variant": "#bbc9ce",
+                    "outline": "#869397",
+                    "error": "#ffb4ab",
+                    "error-container": "#93000a",
+            },
+            "fontFamily": {
+                    "heading": ["Syne", "sans-serif"],
+                    "body": ["DM Sans", "sans-serif"],
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #0e1416;
+            color: #dde3e6;
+            overflow-x: hidden;
+            font-family: 'DM Sans', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6, .font-heading {
+            font-family: 'Syne', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.035) !important;
+            backdrop-filter: blur(25px) !important;
+            -webkit-backdrop-filter: blur(25px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        .glass-panel.is-visible {
+            background: rgba(255, 255, 255, 0.035) !important;
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 198, 232, 0.5);
+        }
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a2123 0%, #090f11 100%);
+            overflow: hidden;
+            transition: background 1s ease;
+        }
+        #canvas-container.scrolled {
+            background: radial-gradient(circle at center, #0e1416 0%, #000000 100%);
+        }
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .animate-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Workflow Timeline Styles */
+        .workflow-line {
+            width: 2px;
+            background: linear-gradient(to bottom, #00c6e8 0%, transparent 100%);
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            opacity: 0.3;
+        }
+        @media (min-width: 768px) {
+            .workflow-line {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+        .workflow-step {
+            transform: translateY(50px);
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .workflow-step.is-visible {
+            transform: translateY(0);
+        }
+
+        /* Problem/Solution Card Animation */
+        .warp-container {
+            perspective: 1400px;
+        }
+        .warp-card {
+            opacity: 0;
+            will-change: transform, opacity, filter;
+            transform-style: flat;
+        }
+        .scroll-locked {
+            overflow: hidden !important;
+            height: 100vh;
+        }
+        #problem-solution-section {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head><body class="antialiased selection:bg-primary-container selection:text-on-primary-container relative">
+<!-- Simulated 3D Background -->
+<div aria-hidden="true" id="canvas-container"></div>
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#1a1a1a]/40 backdrop-blur-xl border-b border-white/10 shadow-2xl shadow-cyan-900/10">
+<div class="flex justify-between items-center px-8 h-20 max-w-[1280px] mx-auto">
+<div class="text-2xl font-black tracking-tighter text-cyan-400 drop-shadow-[0_0_8px_rgba(0,198,232,0.3)] font-heading" style="">ARCHER</div>
+<button class="bg-primary-container text-on-primary-container px-6 py-2 rounded font-bold text-sm uppercase hover:shadow-[0_0_20px_rgba(0,198,232,0.5)] transition-all duration-300 scale-95 active:scale-90 text-cyan-400" onclick="document.getElementById('waitlist').scrollIntoView()" style="">Join Waitlist</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="relative z-10 pt-24 pb-24">
+<!-- 1. Hero Section -->
+<section class="flex flex-col justify-center items-center text-center px-4 max-w-[1280px] mx-auto mb-32 min-h-[60vh] md:min-h-[70vh] lg:min-h-[80vh] pt-12 gs-reveal" id="hero">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-outline/30 backdrop-blur-sm mb-8 mt-[-10vh] bg-surface-variant/5">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_#00c6e8]"></span>
+<span class="font-bold text-on-surface-variant uppercase tracking-widest text-xs" style="">Algorithmic Execution Active</span>
+</div>
+<h1 class="font-heading font-bold text-on-surface mb-6 glow-text max-w-4xl leading-tight text-4xl md:text-6xl lg:text-7xl" style=""><span class="text-primary-container" style=""><font color="#dde3e6">Prediction Markets <br/>Are</font> Mispriced.</span></h1>
+<p class="text-on-surface-variant max-w-2xl mx-auto mb-12 text-lg md:text-xl" style="">
+            Exploiting structural inefficiencies in the weather markets through systematic, data-driven meteorological modeling.
+        </p>
+<div class="flex justify-center">
+<a class="px-16 py-4 rounded-md font-bold text-sm uppercase tracking-wider border border-primary-container/30 text-primary-container hover:bg-primary-container/10 transition-all duration-300 glass-panel flex items-center gap-2 group" href="#waitlist" onclick="document.getElementById('waitlist').scrollIntoView(); return false;" style="">
+                Request Access
+                <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" style="">arrow_forward</span>
+            </a>
+</div>
+</section>
+<!-- 2. Prediction Markets -->
+<section class="px-4 max-w-[1280px] mx-auto mb-40 gs-reveal" id="markets">
+<div class="grid lg:grid-cols-2 gap-12 items-stretch">
+<div class="text-left space-y-6 glass-panel rounded-xl p-8 flex flex-col justify-between gs-slide-left">
+<h2 class="font-heading text-3xl md:text-5xl font-bold text-on-surface mb-4" style="">What are Weather Prediction Markets?</h2>
+<p class="text-on-surface-variant text-lg leading-relaxed" style="">
+                Prediction markets (like Kalshi) are binary options platforms where users bet on the outcome of future events. They offer a unique environment where <span class="font-semibold text-primary-container" style="">retail emotion often overwhelms statistical probability</span>.
+            </p>
+<p class="text-on-surface-variant text-lg leading-relaxed opacity-100" style="">
+                In weather markets specifically, the general public trades based on localized observation and headline news, creating a massive divergence between perceived likelihood and actual meteorological & statistical probabilities.
+            </p>
+<div class="mt-6 w-full">
+<div class="p-6 rounded-2xl glass-panel">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary text-2xl" style="">analytics</span>
+<span class="font-bold text-sm uppercase tracking-widest text-secondary" style="">The Kalshi Context</span>
+</div>
+<p class="text-white/90 text-base font-light leading-relaxed" style="">Kalshi provides a regulated, CFTC-approved exchange for trading these event contracts. It is the ideal battleground for algorithmic precision against retail subjectivity.</p>
+</div>
+</div>
+</div>
+<div class="relative w-full overflow-hidden flex flex-col justify-center font-mono text-sm glass-panel p-6 rounded-xl gs-slide-right" id="order-book-container">
+<div class="flex justify-between items-center pb-2 border-b border-outline/20 mb-4 text-outline text-xs uppercase tracking-widest">
+<span class="" style="">Price</span>
+<span class="" style="">Size</span>
+<span class="" style="">Total</span>
+</div>
+<!-- Asks -->
+<div class="flex flex-col-reverse gap-1 mb-4" id="asks-container">
+</div>
+<!-- Mid Price -->
+<div class="flex justify-between items-center py-4 border-y border-outline/20 my-2">
+<span class="text-outline uppercase tracking-widest text-xs" style="">Mid Price</span>
+<span class="text-xl font-bold text-primary-container animate-pulse" id="mid-price" style="">0.50</span>
+</div>
+<!-- Bids -->
+<div class="flex flex-col gap-1 mt-4" id="bids-container">
+</div>
+</div>
+</div>
+</section>
+<!-- 3. The Problem & 4. The Solution Bento Grid (Warp Animation Section) -->
+<section class="px-4 max-w-[1280px] mx-auto mb-40 warp-container" id="problem-solution-section" style="padding-top: calc(50vh - 210px);">
+<div class="grid md:grid-cols-12 gap-6 w-full">
+<!-- The Problem -->
+<div class="md:col-span-5 glass-panel rounded-xl p-8 border-t border-t-error/30 relative overflow-hidden group warp-card" id="problem-card" style="backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
+<div class="font-bold text-xs uppercase tracking-wider text-error mb-4" style="">The Subjectivity Trap</div>
+<h3 class="font-heading text-2xl font-semibold text-on-surface mb-4" style="">Why the Majority Loses</h3>
+<p class="text-on-surface-variant mb-6 relative z-10" style="">
+                    Retail traders rely on free consumer weather apps, localized confirmation bias, and emotional hedging. They misinterpret probability distributions and fail to account for station siting anomalies.
+                </p>
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-sm" style="">close</span>
+<span class="font-medium text-sm text-outline" style="">Emotional Bias</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-sm" style="">close</span>
+<span class="font-medium text-sm text-outline" style="">Consumer-grade Data</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-sm" style="">close</span>
+<span class="font-medium text-sm text-outline" style="">Misunderstanding Probability</span>
+</div>
+</div>
+</div>
+<!-- The Solution -->
+<div class="md:col-span-7 glass-panel rounded-xl p-8 border-t border-t-primary-container/50 relative overflow-hidden group warp-card" id="solution-card" style="backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="font-bold text-xs uppercase tracking-wider text-primary-container mb-4" style="">Automated Precision</div>
+<h3 class="font-heading text-2xl font-semibold text-on-surface mb-4" style="">The Systematic Edge</h3>
+<p class="text-on-surface-variant mb-8 max-w-lg relative z-10" style="">
+                    ARCHER deploys institutional-grade meteorological models directly against market pricing. We parse raw weather data, analyze historical station bias, and execute automatically when discrepancies emerge.
+                </p>
+<div class="grid grid-cols-2 gap-4 relative z-10">
+<div class="glass-panel p-4 rounded border border-outline/10">
+<div class="font-medium text-lg text-primary-container mb-1" style="">Sub-100ms</div>
+<div class="font-medium text-xs text-outline uppercase tracking-wider" style="">Execution Speed</div>
+</div>
+<div class="glass-panel p-4 rounded border border-outline/10">
+<div class="font-medium text-lg text-primary-container mb-1" style="">10+</div>
+<div class="font-medium text-xs text-outline uppercase tracking-wider" style="">Data Sources</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. The Strategy -->
+<section class="px-4 max-w-[1280px] mx-auto mb-40 gs-reveal" id="strategy">
+<div class="text-center mb-8 gs-scale-up">
+<h2 class="font-heading text-3xl md:text-5xl font-bold text-on-surface mb-4" style="">Algorithmic Edge</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto text-lg" style="">We capitalize on specific, repeatable market mispricings through precisely targeted algorithmic strategies built for consistent execution.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-5 items-stretch">
+<div id="edge-card-1" class="glass-panel p-6 rounded-xl border border-outline/20 hover:border-primary-container/50 transition-colors h-full flex flex-col" style="opacity:0">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-3" style="">my_location</span>
+<h4 class="font-heading text-xl font-semibold text-on-surface mb-3" style="">NWS Station Bias</h4>
+<p class="text-on-surface-variant text-sm" style="">We trade the precise micro-climate of the official NWS settlement station, accounting for forecast offset, heat islands, wind shadows, and climate drift.</p>
+</div>
+<div id="edge-card-2" class="glass-panel p-6 rounded-xl border border-outline/20 hover:border-primary-container/50 transition-colors h-full flex flex-col" style="opacity:0">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-3" style="">schedule</span>
+<h4 class="font-heading text-xl font-semibold text-on-surface mb-3" style="">DST Window Mismatch</h4>
+<p class="text-on-surface-variant text-sm" style="">We exploit timing gaps in contract settlement windows during DST transitions where retail expectations misalign with contract specifications.</p>
+</div>
+<div id="edge-card-3" class="glass-panel p-6 rounded-xl border border-outline/20 hover:border-primary-container/50 transition-colors h-full flex flex-col" style="opacity:0">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-3" style="">call_split</span>
+<h4 class="font-heading text-xl font-semibold text-on-surface mb-3" style="">Model Divergence</h4>
+<p class="text-on-surface-variant text-sm" style="">When ECMWF, GFS, and HRRR disagree, retail uncertainty spikes. We price that divergence to find asymmetric risk-reward entries in volatility.</p>
+</div>
+<div id="edge-card-4" class="glass-panel p-6 rounded-xl border border-outline/20 hover:border-primary-container/50 transition-colors h-full flex flex-col" style="opacity:0">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-3" style="">trending_up</span>
+<h4 class="font-heading text-xl font-semibold text-on-surface mb-3" style="">Historical Volatility Arbitrage</h4>
+<p class="text-on-surface-variant text-sm" style="">We leverage decades of historical volatility data to identify and systematically exploit mispriced tail risks in extreme weather events before the market corrects.</p>
+</div><div id="edge-card-5" class="glass-panel p-6 rounded-xl border border-outline/20 hover:border-primary-container/50 transition-colors h-full flex flex-col" style="opacity:0">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-3" style="">hub</span>
+<h4 class="font-heading text-xl font-semibold text-on-surface mb-3" style="">Ensemble Weighted Modeling</h4>
+<p class="text-on-surface-variant text-sm" style="">We dynamically weight GFS, ECMWF, and HRRR by real-time regional accuracy, giving our engine a structural edge over single-model retail approaches.</p>
+</div><div id="edge-card-6" class="glass-panel p-6 rounded-xl border border-outline/20 hover:border-primary-container/50 transition-colors h-full flex flex-col" style="opacity:0">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-3" style="">sensors</span>
+<h4 class="font-heading text-xl font-semibold text-on-surface mb-3" style="">Station-Specific Micro-Arbitrage</h4>
+<p class="text-on-surface-variant text-sm" style="">We exploit localized reporting anomalies between official NWS sensors and surrounding micro-climates, turning hyper-local data gaps into repeatable edges.</p>
+</div></div>
+</section>
+<!-- Algorithmic Workflow Section -->
+<section class="px-4 max-w-[1280px] mx-auto mb-40 gs-reveal" id="workflow">
+<div class="text-center mb-16 gs-scale-up">
+<h2 class="font-heading text-3xl md:text-5xl font-bold text-on-surface mb-4" style="">Algorithmic Workflow</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto text-lg" style="">The sequential execution logic powering our trading engine.</p>
+</div>
+<div class="relative max-w-4xl mx-auto py-10">
+<div class="workflow-line"></div>
+<!-- Step 1 -->
+<div class="workflow-step mb-16 relative md:flex md:justify-between md:items-center gs-slide-right">
+<div class="hidden md:block md:w-5/12"></div>
+<div class="workflow-dot absolute left-6 md:left-1/2 w-6 h-6 rounded-full bg-primary-container border-4 border-background transform -translate-x-1/2 z-10 shadow-[0_0_15px_#00c6e8]"></div>
+<div class="workflow-card ml-12 md:ml-0 md:w-5/12 glass-panel p-6 rounded-xl border border-outline/20">
+<div class="font-mono text-xs text-primary-container mb-2" style="">PHASE 01</div>
+<h4 class="font-heading text-xl font-bold text-on-surface mb-2" style="">Data Acquisition</h4>
+<p class="text-sm text-on-surface-variant" style="">Fetching 20+ years of historical weather data and continuously ingesting global meteorological forecasts (GFS, ECMWF, HRRR).</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="workflow-step mb-16 relative md:flex md:justify-between md:items-center md:flex-row-reverse gs-slide-left">
+<div class="hidden md:block md:w-5/12"></div>
+<div class="workflow-dot absolute left-6 md:left-1/2 w-6 h-6 rounded-full bg-primary-container border-4 border-background transform -translate-x-1/2 z-10 shadow-[0_0_15px_#00c6e8]"></div>
+<div class="workflow-card ml-12 md:ml-0 md:w-5/12 glass-panel p-6 rounded-xl border border-outline/20">
+<div class="font-mono text-xs text-primary-container mb-2" style="">PHASE 02</div>
+<h4 class="font-heading text-xl font-bold text-on-surface mb-2" style="">Bias Calibration</h4>
+<p class="text-sm text-on-surface-variant" style="">Calculating model-specific bias while actively accounting for long-term climate change trends and localized urban heat island effects.</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="workflow-step mb-16 relative md:flex md:justify-between md:items-center gs-slide-right">
+<div class="hidden md:block md:w-5/12"></div>
+<div class="workflow-dot absolute left-6 md:left-1/2 w-6 h-6 rounded-full bg-primary-container border-4 border-background transform -translate-x-1/2 z-10 shadow-[0_0_15px_#00c6e8]"></div>
+<div class="workflow-card ml-12 md:ml-0 md:w-5/12 glass-panel p-6 rounded-xl border border-outline/20">
+<div class="font-mono text-xs text-primary-container mb-2" style="">PHASE 03</div>
+<h4 class="font-heading text-xl font-bold text-on-surface mb-2" style="">Edge Detection</h4>
+<p class="text-sm text-on-surface-variant" style="">Scanning live prediction markets to identify structural mispricings where true probability significantly diverges from retail consensus.</p>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="workflow-step mb-16 relative md:flex md:justify-between md:items-center md:flex-row-reverse gs-slide-left">
+<div class="hidden md:block md:w-5/12"></div>
+<div class="workflow-dot absolute left-6 md:left-1/2 w-6 h-6 rounded-full bg-primary-container border-4 border-background transform -translate-x-1/2 z-10 shadow-[0_0_15px_#00c6e8]"></div>
+<div class="workflow-card ml-12 md:ml-0 md:w-5/12 glass-panel p-6 rounded-xl border border-outline/20">
+<div class="font-mono text-xs text-primary-container mb-2" style="">PHASE 04</div>
+<h4 class="font-heading text-xl font-bold text-on-surface mb-2" style="">Execution</h4>
+<p class="text-sm text-on-surface-variant" style="">Automated, low-latency trade placement combined with dynamic, risk-managed position sizing based on calculated conviction levels.</p>
+</div>
+</div>
+<!-- Step 5 -->
+<div class="workflow-step relative md:flex md:justify-between md:items-center gs-slide-right">
+<div class="hidden md:block md:w-5/12"></div>
+<div class="workflow-dot absolute left-6 md:left-1/2 w-6 h-6 rounded-full bg-primary-container border-4 border-background transform -translate-x-1/2 z-10 shadow-[0_0_15px_#00c6e8]"></div>
+<div class="workflow-card ml-12 md:ml-0 md:w-5/12 glass-panel p-6 rounded-xl border border-outline/20">
+<div class="font-mono text-xs text-primary-container mb-2" style="">PHASE 05</div>
+<h4 class="font-heading text-xl font-bold text-on-surface mb-2" style="">Refinement</h4>
+<p class="text-sm text-on-surface-variant" style="">Continuously optimizing algorithms based on live performance data and evolving market conditions to maintain a competitive edge.</p>
+</div>
+</div>
+</section>
+<!-- 6. ROI Calculator -->
+<section class="px-4 max-w-[1280px] mx-auto mb-40 gs-reveal warp-container" id="roi" style="padding-top: calc(50vh - 280px);">
+<div id="roi-content" class="glass-panel rounded-2xl p-8 md:p-12">
+<div class="grid md:grid-cols-2 gap-12">
+<div>
+<h2 class="font-heading text-3xl font-bold text-on-surface mb-4" style="">Projected Returns</h2>
+<p class="text-on-surface-variant mb-8" style="">Model potential algorithmic returns based on historical backtesting. Past performance is not indicative of future results.</p>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between mb-2">
+<label class="text-sm font-medium text-on-surface" style="">Starting Capital</label>
+<span class="text-primary-container font-mono" id="cap-val" style="">€10,000</span>
+</div>
+<input class="w-full accent-primary-container" id="capital" max="1000000" min="1000" step="1000" type="range" value="10000"/>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<label class="text-sm font-medium text-on-surface" style="">Risk per Trade (%)</label>
+<span class="text-primary-container font-mono" id="risk-val" style="">10.0%</span>
+</div>
+<input class="w-full accent-primary-container" id="risk-pct" max="20" min="0.1" step="0.1" type="range" value="2"/>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<label class="text-sm font-medium text-on-surface" style="">Trades per Month</label>
+<span class="text-primary-container font-mono" id="trades-val" style="">60</span>
+</div>
+<input class="w-full accent-primary-container" id="trades" max="1000" min="10" step="1" type="range" value="60"/>
+</div>
+<div>
+<div class="flex justify-between mb-2">
+<label class="text-sm font-medium text-on-surface" style="">Estimated Win Rate (%)</label>
+<span class="text-primary-container font-mono" id="win-val" style="">53%</span>
+</div>
+<input class="w-full accent-primary-container" id="win-rate" max="100" min="1" step="1" type="range" value="53"/>
+</div>
+</div>
+</div>
+<div class="glass-panel rounded-xl p-8 border border-outline/20 flex flex-col justify-center items-center text-center">
+<div class="text-sm text-outline uppercase tracking-wider mb-2" style="">Est. Monthly Profit</div>
+<div class="text-5xl font-bold font-mono text-primary-container mb-4 glow-text" id="monthly-profit" style="color: rgb(0, 198, 232);">+€0</div>
+<div class="text-sm text-outline uppercase tracking-wider mb-2 mt-4" style="">Est. Annual ROI</div>
+<div class="text-3xl font-bold font-mono text-on-surface" id="annual-roi" style="">0%</div>
+<div class="text-sm text-outline uppercase tracking-wider mb-2 mt-4" style="">Est. Annual Profit</div>
+<div class="text-2xl font-bold font-mono text-on-surface" id="annual-profit" style="">€0</div>
+<div class="mt-8 text-xs text-outline max-w-xs text-left" style="">
+  *Win pays 2× risk (binary market structure). No intra-month compounding. Simulation only. Trading prediction markets involves substantial risk of loss.
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 7. Risk Management -->
+<section class="px-4 max-w-[1280px] mx-auto mb-40 gs-reveal" id="risk">
+<div class="text-center mb-16 gs-scale-up">
+<h2 class="font-heading text-3xl md:text-5xl font-bold text-on-surface mb-4" style="">Institutional Risk Controls</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto text-lg" style="">Survival is the prerequisite for outperformance.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.1s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">security</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Max Daily Drawdown</div>
+<div class="text-sm text-outline" style="">User-defined circuit breaker that halts trading at a default threshold of -5%</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.2s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">balance</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Position Sizing</div>
+<div class="text-sm text-outline" style="">Fully configurable risk percentage per trade, adjustable from 0.1% up to 20%</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.3s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">timeline</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Model Recalibration</div>
+<div class="text-sm text-outline" style="">Continuous bias drift detection with automatic refit triggers on deviation</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.4s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">api</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">API Failsafes</div>
+<div class="text-sm text-outline" style="">Redundant order validation layers with automatic retry logic on failure</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.5s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">tune</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Strategy Parameters</div>
+<div class="text-sm text-outline" style="">Full local configuration of thresholds, entry filters, and execution timing</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.6s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">schedule</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Execution Windows</div>
+<div class="text-sm text-outline" style="">Customisable trading hours with per-market session and filter rules</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.7s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">monitor_heart</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Live P&L Monitoring</div>
+<div class="text-sm text-outline" style="">Real-time performance dashboards running entirely on your hardware</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.8s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">lock</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Data Sovereignty</div>
+<div class="text-sm text-outline" style="">All logic and data runs locally on your machine — zero cloud dependency</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 0.9s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">speed</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Latency Monitoring</div>
+<div class="text-sm text-outline" style="">Real-time execution lag tracking with automatic alerts on API degradation</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 1.0s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">pause_circle</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Kill Switch</div>
+<div class="text-sm text-outline" style="">One-click full system halt that cancels all open orders and stops execution</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 1.1s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">history</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Audit Logging</div>
+<div class="text-sm text-outline" style="">Tamper-proof logs with timestamps for compliance and review</div>
+</div>
+<div class="glass-panel p-6 rounded-lg text-center border border-outline/10 gs-slide-up" style="--delay: 1.2s">
+<span class="material-symbols-outlined text-3xl text-primary-container mb-4" style="">bar_chart</span>
+<div class="font-bold text-base text-on-surface mb-2" style="">Exposure Limits</div>
+<div class="text-sm text-outline" style="">Hard caps on maximum concurrent positions and total capital at risk</div>
+</div>
+</div>
+</section>
+<!-- Roadmap Section -->
+<section class="px-4 max-w-[1280px] mx-auto mb-40 gs-reveal" id="roadmap">
+<div class="text-center mb-16 gs-scale-up">
+<h2 class="font-heading text-3xl md:text-5xl font-bold text-on-surface mb-4" style="">Development Roadmap</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto text-lg" style="">Our strategic path forward for expanding execution capabilities.</p>
+</div>
+<div class="grid md:grid-cols-4 gap-6">
+<div class="glass-panel p-6 rounded-xl border-t-2 border-primary-container gs-slide-right" style="--delay: 0.1s">
+<div class="font-mono text-sm text-primary-container mb-4 font-bold" style="">Q4 2026</div>
+<h4 class="font-heading text-lg font-bold text-on-surface mb-2" style="">Core Execution Engine</h4>
+<p class="text-sm text-on-surface-variant" style="">Primary Kalshi API integration with foundational NWS station bias models and automated order routing.</p>
+</div>
+<div class="glass-panel p-6 rounded-xl border-t-2 border-primary-container/60 gs-slide-right" style="--delay: 0.2s">
+<div class="font-mono text-sm text-primary-container/60 mb-4 font-bold" style="">Q1 2027</div>
+<h4 class="font-heading text-lg font-bold text-on-surface mb-2" style="">Model Expansion</h4>
+<p class="text-sm text-on-surface-variant" style="">HRRR rapid refresh integration and full implementation of model divergence detection and trading strategies.</p>
+</div>
+<div class="glass-panel p-6 rounded-xl border-t-2 border-outline gs-slide-right" style="--delay: 0.3s">
+<div class="font-mono text-sm text-outline mb-4 font-bold" style="">Q2 2027</div>
+<h4 class="font-heading text-lg font-bold text-on-surface mb-2" style="">Multi-Market Arbitrage</h4>
+<p class="text-sm text-on-surface-variant" style="">Cross-exchange execution comparing Kalshi and Polymarket contracts to capture pricing discrepancies in real time.</p>
+</div>
+<div class="glass-panel p-6 rounded-xl border-t-2 border-outline/50 gs-slide-right" style="--delay: 0.4s">
+<div class="font-mono text-sm text-outline/50 mb-4 font-bold" style="">Q3 2027</div>
+<h4 class="font-heading text-lg font-bold text-on-surface mb-2" style="">Advanced Research</h4>
+<p class="text-sm text-on-surface-variant" style="">Expanded edge detection with new meteorological sources, micro-climate profiling, and probability calibration refinements.</p>
+</div>
+</div>
+</section>
+<!-- 8. CTA & FAQ -->
+<section class="px-4 max-w-[1280px] mx-auto mb-12 gs-reveal" id="waitlist">
+<div class="grid md:grid-cols-2 gap-16">
+<div class="glass-panel p-8 rounded-2xl gs-slide-left">
+<h2 class="font-heading text-3xl font-bold text-on-surface mb-6" style="">Join the Waitlist</h2>
+<p class="text-on-surface-variant mb-8" style="">ARCHER is approaching its first public release. Secure your spot now and be among the first to deploy the system when it launches.</p>
+<iframe name="hidden-google-form" style="display:none;"></iframe>
+<form class="space-y-4" id="waitlist-form" action="https://docs.google.com/forms/d/e/1FAIpQLSf8VAu5eMQCjH0xcMM1ulNpyNvKU3zoi5LtwbEIu2vXH-2Yeg/formResponse" method="POST" target="hidden-google-form" onsubmit="handleFormSubmit(event)">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" style="">First Name</label>
+<input name="entry.1202304519" class="w-full rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-white/5 border border-outline/20" placeholder="Jane" required="" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" style="">Last Name</label>
+<input name="entry.1006626798" class="w-full rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-white/5 border border-outline/20" placeholder="Smith" required="" type="text"/>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" style="">Country</label>
+<select name="entry.1165022907" class="w-full rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all border border-outline/20" id="country-select" required="" style="background:rgba(14,20,22,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);">
+<option value="">Select your country…</option>
+<option>Afghanistan</option><option>Albania</option><option>Algeria</option><option>Andorra</option><option>Angola</option><option>Argentina</option><option>Armenia</option><option>Australia</option><option>Austria</option><option>Azerbaijan</option><option>Bahamas</option><option>Bahrain</option><option>Bangladesh</option><option>Belarus</option><option>Belgium</option><option>Belize</option><option>Benin</option><option>Bhutan</option><option>Bolivia</option><option>Bosnia and Herzegovina</option><option>Botswana</option><option>Brazil</option><option>Brunei</option><option>Bulgaria</option><option>Burkina Faso</option><option>Burundi</option><option>Cambodia</option><option>Cameroon</option><option>Canada</option><option>Chad</option><option>Chile</option><option>China</option><option>Colombia</option><option>Congo</option><option>Costa Rica</option><option>Croatia</option><option>Cuba</option><option>Cyprus</option><option>Czech Republic</option><option>Denmark</option><option>Dominican Republic</option><option>Ecuador</option><option>Egypt</option><option>El Salvador</option><option>Estonia</option><option>Ethiopia</option><option>Finland</option><option>France</option><option>Georgia</option><option>Germany</option><option>Ghana</option><option>Greece</option><option>Guatemala</option><option>Honduras</option><option>Hungary</option><option>Iceland</option><option>India</option><option>Indonesia</option><option>Iran</option><option>Iraq</option><option>Ireland</option><option>Israel</option><option>Italy</option><option>Jamaica</option><option>Japan</option><option>Jordan</option><option>Kazakhstan</option><option>Kenya</option><option>Kuwait</option><option>Latvia</option><option>Lebanon</option><option>Libya</option><option>Lithuania</option><option>Luxembourg</option><option>Malaysia</option><option>Malta</option><option>Mexico</option><option>Moldova</option><option>Mongolia</option><option>Montenegro</option><option>Morocco</option><option>Mozambique</option><option>Myanmar</option><option>Nepal</option><option>Netherlands</option><option>New Zealand</option><option>Nicaragua</option><option>Nigeria</option><option>North Macedonia</option><option>Norway</option><option>Oman</option><option>Pakistan</option><option>Panama</option><option>Paraguay</option><option>Peru</option><option>Philippines</option><option>Poland</option><option>Portugal</option><option>Qatar</option><option>Romania</option><option>Russia</option><option>Rwanda</option><option>Saudi Arabia</option><option>Senegal</option><option>Serbia</option><option>Singapore</option><option>Slovakia</option><option>Slovenia</option><option>Somalia</option><option>South Africa</option><option>South Korea</option><option>Spain</option><option>Sri Lanka</option><option>Sudan</option><option>Sweden</option><option>Switzerland</option><option>Syria</option><option>Taiwan</option><option>Tanzania</option><option>Thailand</option><option>Tunisia</option><option>Turkey</option><option>Uganda</option><option>Ukraine</option><option>United Arab Emirates</option><option>United Kingdom</option><option>United States</option><option>Uruguay</option><option>Uzbekistan</option><option>Venezuela</option><option>Vietnam</option><option>Yemen</option><option>Zambia</option><option>Zimbabwe</option>
+</select>
+</div>
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" style="">Phone Number</label>
+<input name="entry.1849821102" class="w-full rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-white/5 border border-outline/20" placeholder="+1 555 000 0000" type="tel"/>
+</div>
+<div>
+<label class="block text-sm font-medium text-on-surface mb-1" style="">Email Address</label>
+<input name="entry.485629244" class="w-full rounded-md px-4 py-3 text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all bg-white/5 border border-outline/20" placeholder="jane@example.com" required="" type="email"/>
+</div>
+<!-- Opt-in mapped to Google Form radio: Yes -->
+<input type="hidden" name="entry.1119655371" value="Yes"/>
+<div class="flex items-start gap-3 mt-2">
+<input class="mt-1 accent-primary-container flex-shrink-0" id="consent" required="" type="checkbox"/>
+<label class="text-xs text-on-surface-variant leading-relaxed" for="consent" style="">I agree to be contacted by Arventra via email and phone regarding my waitlist application, and consent to the processing of my personal data in accordance with the <a class="text-primary-container underline hover:opacity-80 transition-opacity" href="/privacy-policy" target="_blank">Privacy Policy</a>.</label>
+</div>
+<button class="w-full bg-primary-container text-[#000] font-bold uppercase tracking-wider py-4 rounded-md hover:shadow-[0_0_20px_rgba(0,198,232,0.4)] transition-all mt-2" style="" type="submit">
+  Request Access
+</button>
+<div class="text-sm mt-4 hidden" id="form-message"></div>
+</form>
+
+<script>
+function handleFormSubmit(e) {
+    // Let the form POST to Google in the hidden iframe
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    setTimeout(() => {
+        e.target.reset();
+        btn.disabled = false;
+        btn.textContent = 'Request Access';
+        const msg = document.getElementById('form-message');
+        msg.textContent = "✓ You're on the list. We'll be in touch.";
+        msg.classList.remove('hidden');
+        msg.style.color = '#00c6e8';
+    }, 1200);
+}
+</script>
+</div>
+<div class="gs-slide-right" id="faq">
+<h3 class="font-heading text-2xl font-bold text-on-surface mb-6" style="">Frequently Asked Questions</h3>
+<div class="space-y-4">
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">Do I need to leave my computer on?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">Yes. ARCHER runs locally on your own hardware. The system needs to be active during your configured trading windows to monitor markets and execute positions.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">What technical requirements are there?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">ARCHER is designed to run on any modern desktop or laptop. A stable internet connection is required. Detailed system requirements will be shared ahead of release.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">What markets are supported?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">The initial release targets weather prediction markets on Kalshi exclusively. Additional markets and exchanges are planned for subsequent releases.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">Is my capital secure?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">ARCHER does not hold your funds. You maintain full custody of your capital in your Kalshi account; the system only requires API keys to place orders on your behalf.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">How much capital do I need?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">There is no enforced minimum. However, we recommend starting with at least $1,000 to allow meaningful position sizing within Kalshi's contract limits.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">When will ARCHER be available?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">We are targeting a first release in Q4 2026. Waitlist members will be notified by email as soon as access opens.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">Can I customise the trading strategy?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">Yes. ARCHER exposes all core parameters — risk per trade, execution windows, market filters, and bias thresholds — through a local configuration file you control entirely.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">Is there a subscription fee?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">Pricing details will be announced closer to launch. Waitlist members will receive priority access and early-adopter terms before public pricing goes live.</p>
+</details>
+<details class="border border-outline/20 rounded-lg p-4 group cursor-pointer glass-panel" style="">
+<summary class="font-semibold text-on-surface group-hover:text-primary-container transition-colors" style="">What happens to my data?</summary>
+<p class="text-sm text-on-surface-variant mt-3 leading-relaxed" style="">Your trading activity stays on your machine. We only collect the contact details you submit here, used solely to notify you at launch and in accordance with our Privacy Policy.</p>
+</details>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer JSON Component -->
+<footer class="w-full pt-6 pb-6 bg-[#1a1a1a]/40 backdrop-blur-xl border-t border-white/5 relative z-20 mt-12">
+<div class="max-w-[1280px] mx-auto px-8">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="text-lg font-black font-heading text-white tracking-tighter" style="">ARCHER</div>
+<div class="font-mono text-[10px] tracking-widest uppercase text-cyan-400" style="">
+                © 2026 Arventra Capital LLC
+            </div>
+<div class="flex gap-6 font-mono text-[10px] tracking-widest uppercase">
+<a class="text-gray-600 hover:text-cyan-400 transition-colors opacity-80 hover:opacity-100" href="#" style="">Privacy</a>
+<a class="text-gray-600 hover:text-cyan-400 transition-colors opacity-80 hover:opacity-100" href="#" style="">Imprint</a>
+</div>
+</div>
+</div>
+</footer>
+<script>
+    // Register GSAP plugins
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Three.js Background Animation
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0e1416, 0.015);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    // --- Volatility Surface (hero only) + Particle Dissolution on scroll ---
+    const env1Group = new THREE.Group();
+
+    // Grid mesh
+    const GRID_W = 100, GRID_H = 100;
+    const geometry = new THREE.PlaneGeometry(200, 200, GRID_W, GRID_H);
+    const material = new THREE.MeshBasicMaterial({ 
+        color: 0x00c6e8, 
+        wireframe: true,
+        transparent: true,
+        opacity: 0.25
+    });
+    const plane = new THREE.Mesh(geometry, material);
+    plane.rotation.x = -Math.PI / 2.5;
+    plane.position.y = -15;
+    env1Group.add(plane);
+    scene.add(env1Group);
+
+    // Particle system — one particle per grid vertex, hidden at start
+    const particleCount = (GRID_W + 1) * (GRID_H + 1);
+    const pPositions = new Float32Array(particleCount * 3);
+    const pVelocities = []; // drift velocity per particle
+    const pOffsets = [];    // random float offset for shimmer
+
+    for (let i = 0; i < particleCount; i++) {
+        pVelocities.push({
+            x: (Math.random() - 0.5) * 0.04,
+            y: 0.01 + Math.random() * 0.04,   // drift upward
+            z: (Math.random() - 0.5) * 0.03
+        });
+        pOffsets.push(Math.random() * Math.PI * 2);
+    }
+
+    // Round glowing star texture via canvas
+    const starCanvas = document.createElement('canvas');
+    starCanvas.width = starCanvas.height = 64;
+    const sCtx = starCanvas.getContext('2d');
+    const grad = sCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0,    'rgba(180, 240, 255, 1)');   // bright white-blue core
+    grad.addColorStop(0.15, 'rgba(0,  198, 232, 0.9)');  // teal halo
+    grad.addColorStop(0.5,  'rgba(0,  120, 180, 0.3)');  // soft outer glow
+    grad.addColorStop(1,    'rgba(0,    0,   0, 0)');    // transparent edge
+    sCtx.fillStyle = grad;
+    sCtx.fillRect(0, 0, 64, 64);
+    const starTexture = new THREE.CanvasTexture(starCanvas);
+
+    const pGeometry = new THREE.BufferGeometry();
+    pGeometry.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+
+    // Random sizes for depth variety — some tiny background stars, some big bright ones
+    const pSizes = new Float32Array(particleCount);
+    for (let i = 0; i < particleCount; i++) {
+        pSizes[i] = Math.pow(Math.random(), 2.5) * 2.5 + 0.3;
+    }
+    pGeometry.setAttribute('size', new THREE.BufferAttribute(pSizes, 1));
+
+    const pMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        map: starTexture,
+        size: 1.2,
+        transparent: true,
+        opacity: 0,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending  // glow stacks like real stars
+    });
+    const particles = new THREE.Points(pGeometry, pMaterial);
+    particles.rotation.x = -Math.PI / 2.5;
+    particles.position.y = -15;
+    scene.add(particles);
+
+    camera.position.z = 20;
+    camera.position.y = 5;
+
+    const vertices = plane.geometry.attributes.position.array;
+    const vertCount = vertices.length / 3;
+
+    // Multigrid value noise — each grid cell independently random, no symmetry
+    function hash2(x, y) {
+        const n = x * 127.1 + y * 311.7;
+        const s = Math.sin(n) * 43758.5453;
+        return s - Math.floor(s);
+    }
+    function vnoise(x, y) {
+        const ix = Math.floor(x), iy = Math.floor(y);
+        const fx = x - ix, fy = y - iy;
+        const ux = fx*fx*fx*(fx*(fx*6-15)+10); // smoothstep5
+        const uy = fy*fy*fy*(fy*(fy*6-15)+10);
+        return (
+            hash2(ix,   iy  ) * (1-ux) * (1-uy) +
+            hash2(ix+1, iy  ) * ux     * (1-uy) +
+            hash2(ix,   iy+1) * (1-ux) * uy     +
+            hash2(ix+1, iy+1) * ux     * uy
+        ) * 2 - 1; // range -1..1
+    }
+    // Fractal Brownian Motion — layered octaves for natural turbulence
+    function fbm(x, y, octaves) {
+        let v = 0, amp = 0.5, freq = 1, max = 0;
+        for (let o = 0; o < octaves; o++) {
+            v   += vnoise(x * freq, y * freq) * amp;
+            max += amp;
+            amp  *= 0.52;
+            freq *= 2.1; // slightly off-2 to break periodicity
+        }
+        return v / max;
+    }
+
+    // Per-vertex stable random properties for spike bursts
+    const vdata = new Float32Array(vertCount * 3);
+    for (let i = 0; i < vertCount; i++) {
+        vdata[i*3]   = Math.random() * 1000;        // unique noise offset X
+        vdata[i*3+1] = Math.random() * 1000;        // unique noise offset Y
+        vdata[i*3+2] = Math.pow(Math.random(), 3);  // spikiness (skewed low — few tall ones)
+    }
+
+    // Sparse "event" spikes — biased toward one side (like short-expiry IV spikes)
+    function makeEvent() {
+        // X biased toward positive side (right/near-expiry cluster)
+        const sideWeight = Math.random();
+        const x = sideWeight < 0.7
+            ? 20 + Math.random() * 80          // 70% of spikes on the right half
+            : (Math.random() - 0.5) * 180;     // 30% anywhere
+        return {
+            x,
+            y:      (Math.random() - 0.5) * 180,
+            life:   Math.random() * Math.PI * 2,
+            speed:  0.005 + Math.random() * 0.018,
+            height: 10 + Math.random() * 32,        // taller overall
+            radius: 3 + Math.random() * 8           // narrower = spikier
+        };
+    }
+    const events = Array.from({length: 28}, makeEvent); // more spikes
+
+    // Start at "bottom of scroll" intensity so hero already looks dramatic
+    let time = 0;
+    let animConfig = { intensity: 4, speed: 1 };
+    let dissolveProgress = 0; // 0 = full grid, 1 = full particles
+
+    // Per-particle accumulated drift (starts from vertex position)
+    const pDrift = new Float32Array(particleCount * 3); // accumulated drift
+
+    function computeVertexZ(vx, vy, i) {
+        const terrain = fbm(vx * 0.025 + time * 0.11, vy * 0.025 + time * 0.07, 4) * 5;
+        const turb    = fbm(vx * 0.07  - time * 0.09, vy * 0.07  + time * 0.13, 3) * 3;
+        const micro   = fbm(vdata[i*3] + time * 0.17, vdata[i*3+1] + time * 0.13, 2)
+                        * vdata[i*3+2] * 4;
+        let spike = 0;
+        for (const e of events) {
+            const dx = vx - e.x, dy = vy - e.y;
+            const falloff = Math.exp(-(dx*dx + dy*dy) / (2 * e.radius * e.radius));
+            spike += falloff * Math.max(0, Math.sin(e.life)) * e.height;
+        }
+        return (terrain + turb + micro + spike) * animConfig.intensity;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        time += 0.05;
+
+        events.forEach(e => {
+            e.life += e.speed;
+            if (e.life > Math.PI * 2) { Object.assign(e, makeEvent()); e.life = 0; }
+        });
+
+        const d = dissolveProgress;
+
+        // Smooth easing functions so nothing snaps
+        const easeIn  = t => t * t * t;
+        const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+        // Grid: full opacity until 30%, then graceful fade to 0 by 75%
+        const gridT       = Math.max(0, Math.min(1, (d - 0.3) / 0.45));
+        const gridOpacity = easeIn(1 - gridT);
+
+        // Particles: start fading in gently at 20%, fully visible by 70%
+        const particleT       = Math.max(0, Math.min(1, (d - 0.2) / 0.5));
+        const particleOpacity = easeOut(particleT);
+
+        material.opacity  = 0.25 * gridOpacity;
+        pMaterial.opacity = 0.65 * particleOpacity;
+
+        // Update grid vertices
+        for (let i = 0; i < vertCount; i++) {
+            const vi = i * 3;
+            const vx = vertices[vi];
+            const vy = vertices[vi + 1];
+            const z  = computeVertexZ(vx, vy, i);
+
+            // Jitter only kicks in after 25% and ramps very gradually — no sudden crack
+            const jitterStrength = Math.max(0, (d - 0.25) / 0.75);
+            const crackJitter = (Math.random() - 0.5) * jitterStrength * jitterStrength * 10;
+            vertices[vi + 2] = z * (1 - easeIn(Math.min(1, d / 0.8))) + crackJitter;
+        }
+        plane.geometry.attributes.position.needsUpdate = true;
+
+        // Sync particle start positions to grid vertices (until dissolve begins)
+        // then let them drift freely
+        const pPos = pGeometry.attributes.position.array;
+        for (let i = 0; i < particleCount; i++) {
+            const vi = i * 3;
+            const gx = vertices[vi];
+            const gy = vertices[vi + 1];
+            const gz = vertices[vi + 2];
+
+            if (d < 0.25) {
+                // Anchored to grid — gently track surface position
+                pPos[vi]     = gx;
+                pPos[vi + 1] = gy;
+                pPos[vi + 2] = gz;
+                pDrift[vi]     = gx;
+                pDrift[vi + 1] = gy;
+                pDrift[vi + 2] = gz;
+            } else {
+                // Drift freely — ramp up gradually from 25% to 65%
+                const v = pVelocities[i];
+                const breakForce = Math.min(1, (d - 0.25) / 0.4);
+                // Orbital-style drift: base velocity + slow swirl around origin
+                const angle = time * 0.08 + pOffsets[i];
+                const swirl = breakForce * 0.015;
+                pDrift[vi]     += v.x * breakForce + Math.cos(angle) * swirl;
+                pDrift[vi + 1] += v.y * breakForce * 0.6 + Math.sin(time * 0.3 + pOffsets[i]) * 0.018;
+                pDrift[vi + 2] += v.z * breakForce + Math.sin(angle) * swirl;
+                // Twinkle: pulse size slightly per particle
+                pSizes[i] = (Math.pow(Math.random() < 0.01 ? Math.random() : 0, 1) 
+                             || (0.3 + Math.pow(Math.random(), 2.5) * 2.5))
+                             * (0.85 + Math.sin(time * 1.5 + pOffsets[i]) * 0.15);
+                pPos[vi]     = pDrift[vi];
+                pPos[vi + 1] = pDrift[vi + 1];
+                pPos[vi + 2] = pDrift[vi + 2];
+            }
+        }
+        pGeometry.attributes.position.needsUpdate = true;
+        pGeometry.attributes.size.needsUpdate = true;
+
+        env1Group.rotation.y   = window.scrollY * 0.0001;
+        particles.rotation.y   = window.scrollY * 0.0001;
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Hero dissolve: starts when hero bottom leaves viewport, ends at 80% scrolled
+    const heroEl = document.getElementById('hero');
+    ScrollTrigger.create({
+        trigger: heroEl,
+        start: 'bottom bottom',   // fires when hero bottom hits viewport bottom
+        end: 'bottom 20%',        // ends when hero bottom is 80% past the top
+        scrub: true,
+        onUpdate: (self) => {
+            dissolveProgress = self.progress;
+        },
+        onLeaveBack: () => { dissolveProgress = 0; }
+    });
+
+    // 3D Warp Animation for Problem/Solution Section
+    const warpSection = document.getElementById('problem-solution-section');
+    const problemCard = document.getElementById('problem-card');
+    const solutionCard = document.getElementById('solution-card');
+
+    // Problem/Solution cards: scrub-driven depth zoom — cards fly from far back to front
+    const cardTl = gsap.timeline({
+        scrollTrigger: {
+            trigger: warpSection,
+            start: "top 80px",
+            end: "+=80%",
+            pin: true,
+            scrub: 0.5,
+            anticipatePin: 1
+        }
+    });
+
+    // Problem card: shoots from deep behind the screen straight toward the viewer
+    cardTl.fromTo(problemCard,
+        {
+            opacity: 0,
+            z: -1800,
+            scale: 0.1,
+            transformOrigin: "center center"
+        },
+        {
+            opacity: 1,
+            z: 0,
+            scale: 1,
+            transformOrigin: "center center",
+            ease: "power2.out",
+            duration: 1
+        }
+    )
+    // Solution card: same depth shot, staggered slightly behind
+    .fromTo(solutionCard,
+        {
+            opacity: 0,
+            z: -1800,
+            scale: 0.1,
+            transformOrigin: "center center"
+        },
+        {
+            opacity: 1,
+            z: 0,
+            scale: 1,
+            transformOrigin: "center center",
+            ease: "power2.out",
+            duration: 1
+        },
+        "-=0.5"
+    )
+    // Hold — both cards fully visible before pin releases
+    .to({}, { duration: 0.4 }, 1.5);
+
+    // --- Algorithmic Edge cards: pinned scroll-driven stagger ---
+    // Card 1 & 2 fly in from right, card 3 from left, each triggered sequentially
+    const edgeSection = document.getElementById('strategy');
+    const edgeCard1   = document.getElementById('edge-card-1');
+    const edgeCard2   = document.getElementById('edge-card-2');
+    const edgeCard3   = document.getElementById('edge-card-3');
+
+    // Set initial off-screen states
+    gsap.set(edgeCard1, { x: '120vw', rotateY: -35, opacity: 0, transformOrigin: 'right center' });
+    gsap.set(edgeCard2, { x: '120vw', rotateY: -35, opacity: 0, transformOrigin: 'right center' });
+    gsap.set(edgeCard3, { x: '-120vw', rotateY: 35,  opacity: 0, transformOrigin: 'left center'  });
+
+    const edgeCard4 = document.getElementById('edge-card-4');
+    const edgeCard5 = document.getElementById('edge-card-5');
+    const edgeCard6 = document.getElementById('edge-card-6');
+
+    // Row 1 off-screen left, row 2 off-screen right
+    gsap.set([edgeCard1, edgeCard2, edgeCard3], { x: '-120vw', rotateY: 35,  opacity: 0, transformOrigin: 'left center' });
+    gsap.set([edgeCard4, edgeCard5, edgeCard6], { x: '120vw',  rotateY: -35, opacity: 0, transformOrigin: 'right center' });
+
+    // ── LOCK 1: pin when section headline is ~55% down the screen, animate row 1 ──
+    const edgeTl1 = gsap.timeline({
+        scrollTrigger: {
+            trigger: edgeSection,
+            start: 'top 35%',      // pin earlier so cards sit centered in viewport
+            end: '+=280%',         // extended so lock holds until card 1 is fully settled
+            pin: true,
+            pinSpacing: true,
+            scrub: true,           // strict scrub — must complete before scroll continues
+            anticipatePin: 1,
+        }
+    });
+
+    edgeTl1
+        .to(edgeCard3, { x: 0, rotateY: 0, opacity: 1, ease: 'none', duration: 1 }, 0)
+        .to(edgeCard2, { x: 0, rotateY: 0, opacity: 1, ease: 'none', duration: 1 }, 0.35)
+        .to(edgeCard1, { x: 0, rotateY: 0, opacity: 1, ease: 'none', duration: 1 }, 0.7)
+        // Hold buffer: card 1 fully in place before lock releases on next scroll
+        .to({}, { duration: 0.6 }, 1.7);
+
+    // ── LOCK 2: pin when headline reaches top (80px below nav), animate row 2 ──
+    // A sentinel div is injected after the section; GSAP's pinSpacing from lock 1
+    // automatically pushes it below the pinned space so lock 2 fires after lock 1 releases.
+    const edgeSentinel = document.createElement('div');
+    edgeSentinel.style.cssText = 'height:1px;pointer-events:none;';
+    edgeSection.after(edgeSentinel);
+
+    const edgeTl2 = gsap.timeline({
+        scrollTrigger: {
+            trigger: edgeSection,  // re-trigger on the same section
+            start: 'top 80px',     // now headline is flush under navbar
+            end: '+=280%',         // extended so lock holds until card 6 is fully settled
+            pin: true,
+            pinSpacing: true,
+            scrub: true,           // strict scrub — must complete before scroll continues
+            anticipatePin: 1,
+        }
+    });
+
+    edgeTl2
+        .to(edgeCard4, { x: 0, rotateY: 0, opacity: 1, ease: 'none', duration: 1 }, 0)
+        .to(edgeCard5, { x: 0, rotateY: 0, opacity: 1, ease: 'none', duration: 1 }, 0.35)
+        .to(edgeCard6, { x: 0, rotateY: 0, opacity: 1, ease: 'none', duration: 1 }, 0.7)
+        // Hold buffer: card 6 fully in place before lock releases on next scroll
+        .to({}, { duration: 0.6 }, 1.7);
+
+        // ── ROI Calculator ──
+    function formatEur(n) {
+        return '€' + Math.round(n).toLocaleString('de-DE');
+    }
+
+    function calcROI() {
+        const capital   = parseFloat(document.getElementById('capital').value);
+        const riskPct   = parseFloat(document.getElementById('risk-pct').value) / 100;
+        const trades    = parseFloat(document.getElementById('trades').value);
+        const winRate   = parseFloat(document.getElementById('win-rate').value) / 100;
+        const lossRate  = 1 - winRate;
+
+        // Binary market: win pays 2× risk (pitch deck: "2% risk / 4% win")
+        const riskAmt   = capital * riskPct;          // € lost on a loss
+        const winAmt    = riskAmt * 2;                // € gained on a win
+
+        // Expected value per trade
+        const evPerTrade = (winRate * winAmt) - (lossRate * riskAmt);
+
+        // Monthly P&L (no intra-month compounding)
+        const monthlyProfit = evPerTrade * trades;
+        const annualProfit  = monthlyProfit * 12;
+        const annualROI     = (annualProfit / capital) * 100;
+
+        // Update labels
+        document.getElementById('cap-val').textContent   = formatEur(capital);
+        document.getElementById('risk-val').textContent  = parseFloat(document.getElementById('risk-pct').value).toFixed(1) + '%';
+        document.getElementById('trades-val').textContent = Math.round(trades);
+        document.getElementById('win-val').textContent   = Math.round(document.getElementById('win-rate').value) + '%';
+
+        // Update outputs
+        const profitEl = document.getElementById('monthly-profit');
+        profitEl.textContent = (monthlyProfit >= 0 ? '+' : '') + formatEur(monthlyProfit);
+        profitEl.style.color = monthlyProfit >= 0 ? '#00c6e8' : '#ff6b6b';
+
+        document.getElementById('annual-roi').textContent    = (annualROI >= 0 ? '+' : '') + annualROI.toFixed(1) + '%';
+        document.getElementById('annual-profit').textContent = (annualProfit >= 0 ? '+' : '') + formatEur(annualProfit);
+    }
+
+    ['capital','risk-pct','trades','win-rate'].forEach(id => {
+        document.getElementById(id).addEventListener('input', calcROI);
+    });
+    calcROI(); // run on load
+
+
+
+    // ── ROI Calculator: depth-zoom reveal (mirrors problem/solution cards) ──
+    (function() {
+        const roiSection = document.getElementById('roi');
+        const roiContent = document.getElementById('roi-content');
+
+        // Start deep behind the screen, identical to the warp cards
+        gsap.set(roiContent, { opacity: 0, z: -1800, scale: 0.1, transformOrigin: 'center center' });
+
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: roiSection,
+                start: 'top 80px',
+                end: '+=80%',
+                pin: true,
+                pinSpacing: true,
+                anticipatePin: 1,
+                scrub: 0.5,
+            }
+        });
+
+        // Shoot the calculator from deep behind the screen straight toward the viewer
+        tl.to(roiContent, {
+            opacity: 1,
+            z: 0,
+            scale: 1,
+            transformOrigin: 'center center',
+            ease: 'power2.out',
+            duration: 1
+        }, 0)
+        // Hold — fully visible, still pinned, before scroll continues
+        .to({}, { duration: 0.4 }, 1);
+    })();
+
+    // ── FAQ accordion: only one item open at a time ──
+    document.querySelectorAll('#faq details').forEach(detail => {
+        detail.addEventListener('toggle', () => {
+            if (detail.open) {
+                document.querySelectorAll('#faq details').forEach(other => {
+                    if (other !== detail) other.removeAttribute('open');
+                });
+            }
+        });
+    });
+
+    // General GSAP Animations for other sections
+    gsap.utils.toArray('.gs-slide-up').forEach(elem => {
+        gsap.fromTo(elem, 
+            { y: 50, opacity: 0 },
+            { 
+                y: 0, 
+                opacity: 1, 
+                duration: 1, 
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: elem,
+                    start: "top 80%",
+                    toggleActions: "play none none reverse"
+                }
+            }
+        );
+    });
+
+    gsap.utils.toArray('.gs-slide-left').forEach(elem => {
+        const isWorkflow = elem.classList.contains('workflow-step');
+        const target = isWorkflow ? elem.querySelector('.workflow-card') : elem;
+        if (isWorkflow) {
+            gsap.fromTo(target,
+                { opacity: 0 },
+                {
+                    opacity: 1,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: elem,
+                        start: "top 90%",
+                        end: "center center",
+                        scrub: true,
+                        toggleActions: "play none none reverse"
+                    }
+                }
+            );
+        } else {
+            gsap.fromTo(target, 
+                { x: -50, opacity: 0 },
+                { 
+                    x: 0, 
+                    opacity: 1, 
+                    duration: 1,
+                    ease: "power2.out",
+                    scrollTrigger: {
+                        trigger: elem,
+                        start: "top 80%",
+                        toggleActions: "play none none reverse"
+                    }
+                }
+            );
+        }
+    });
+
+    gsap.utils.toArray('.gs-slide-right').forEach(elem => {
+        const isWorkflow = elem.classList.contains('workflow-step');
+        const target = isWorkflow ? elem.querySelector('.workflow-card') : elem;
+        if (isWorkflow) {
+            // Fade in via scrub so opacity completes exactly when card hits 50% screen
+            gsap.fromTo(target,
+                { opacity: 0 },
+                {
+                    opacity: 1,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: elem,
+                        start: "top 90%",
+                        end: "center center",
+                        scrub: true,
+                        toggleActions: "play none none reverse"
+                    }
+                }
+            );
+        } else {
+            gsap.fromTo(target, 
+                { x: 50, opacity: 0 },
+                { 
+                    x: 0, 
+                    opacity: 1, 
+                    duration: 1,
+                    ease: "power2.out",
+                    scrollTrigger: {
+                        trigger: elem,
+                        start: "top 80%",
+                        toggleActions: "play none none reverse"
+                    }
+                }
+            );
+        }
+    });
+
+    gsap.utils.toArray('.gs-scale-up').forEach(elem => {
+        gsap.fromTo(elem, 
+            { scale: 0.9, opacity: 0 },
+            { 
+                scale: 1, 
+                opacity: 1, 
+                duration: 1, 
+                ease: "back.out(1.7)",
+                scrollTrigger: {
+                    trigger: elem,
+                    start: "top 85%",
+                    toggleActions: "play none none reverse"
+                }
+            }
+        );
+    });
+
+
+    // Scroll event listener for background color transition
+    window.addEventListener('scroll', () => {
+        const container = document.getElementById('canvas-container');
+        if (window.scrollY > window.innerHeight * 0.2) {
+            container.classList.add('scrolled');
+        } else {
+            container.classList.remove('scrolled');
+        }
+    });
+
+    // Order Book Animation Logic
+    const orderBookContainer = document.getElementById('order-book-container');
+    if (orderBookContainer) {
+        const asksContainer = document.getElementById('asks-container');
+        const bidsContainer = document.getElementById('bids-container');
+        const midPriceEl = document.getElementById('mid-price');
+
+        const generateRow = (type, price, qty, total) => {
+            const color = type === 'ask' ? 'text-error' : 'text-[#4ade80]';
+            const barColor = type === 'ask' ? 'bg-error/10' : 'bg-[#4ade80]/10';
+            const width = Math.min(100, (total / 30000) * 100);
+            
+            return `
+                <div class="relative flex justify-between items-center py-1 z-10 group text-sm">
+                    <div class="absolute right-0 top-0 bottom-0 ${barColor} z-[-1] transition-all duration-300" style="width: ${width}%"></div>
+                    <div class="${color} w-1/3 text-left pl-2">${price.toFixed(2)}</div>
+                    <div class="text-on-surface w-1/3 text-right">${qty.toLocaleString()}</div>
+                    <div class="text-on-surface-variant w-1/3 text-right pr-2 font-light">${total.toLocaleString()}</div>
+                </div>
+            `;
+        };
+
+        let midPrice = 0.54;
+        
+        const updateOrderBook = () => {
+            // Change mid price slightly
+            midPrice += (Math.random() - 0.5) * 0.02;
+            if (midPrice < 0.1) midPrice = 0.1;
+            if (midPrice > 0.9) midPrice = 0.9;
+            
+            midPriceEl.textContent = midPrice.toFixed(2);
+
+            let asksHtml = '';
+            let bidsHtml = '';
+            
+            let currentAsk = midPrice + 0.01;
+            let askTotal = 0;
+            for (let i = 0; i < 7; i++) {
+                currentAsk += Math.random() * 0.02;
+                const qty = Math.floor(Math.random() * 3000) + 500;
+                askTotal += qty;
+                asksHtml += generateRow('ask', currentAsk, qty, askTotal);
+            }
+            
+            let currentBid = midPrice - 0.01;
+            let bidTotal = 0;
+            for (let i = 0; i < 7; i++) {
+                currentBid -= Math.random() * 0.02;
+                if (currentBid < 0.01) currentBid = 0.01;
+                const qty = Math.floor(Math.random() * 3000) + 500;
+                bidTotal += qty;
+                bidsHtml += generateRow('bid', currentBid, qty, bidTotal);
+            }
+
+            asksContainer.innerHTML = asksHtml;
+            bidsContainer.innerHTML = bidsHtml;
+        };
+
+        setInterval(updateOrderBook, 1500);
+        updateOrderBook();
+    }
+
+    // Handle Resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Initial load animation for Hero
+    gsap.fromTo("#hero", 
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 1.5, ease: "power3.out", delay: 0.2 }
+    );
+
+</script>
+</body></html>
